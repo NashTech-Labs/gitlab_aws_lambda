@@ -1,0 +1,14 @@
+# Terraform
+*.tfstate
+*.tfstate.*
+.terraform/
+terraform.tfvars
+terraform.tfplan
+
+# Python
+__pycache__/
+*.pyc
+*.pyo
+
+# Lambda package
+lambda_package.zip

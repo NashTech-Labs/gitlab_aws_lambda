@@ -1,0 +1,62 @@
+stages:
+  - package
+  - validate
+  - plan
+  - apply
+
+variables:
+  TF_ROOT: "terraform"
+  LAMBDA_ROOT: "lambda"
+  AWS_DEFAULT_REGION: "us-east-1"
+
+before_script:
+  - apt-get update && apt-get install -y zip
+
+package_lambda:
+  stage: package
+  image: python:3.11
+  script:
+    - chmod +x scripts/package_lambda.sh
+    - ./scripts/package_lambda.sh
+  artifacts:
+    paths:
+      - lambda_package.zip
+  only:
+    - merge_requests
+    - main
+
+validate:
+  stage: validate
+  image: hashicorp/terraform:1.5
+  script:
+    - cd $TF_ROOT
+    - terraform init -backend=false
+    - terraform validate
+  only:
+    - merge_requests
+    - main
+
+plan:
+  stage: plan
+  image: hashicorp/terraform:1.5
+  script:
+    - cd $TF_ROOT
+    - terraform init
+    - terraform plan -out=tfplan
+    - terraform show -no-color tfplan > plan.txt
+  artifacts:
+    paths:
+      - terraform/plan.txt
+  only:
+    - merge_requests
+
+apply:
+  stage: apply
+  image: hashicorp/terraform:1.5
+  script:
+    - cd $TF_ROOT
+    - terraform init
+    - terraform apply -auto-approve
+  when: manual
+  only:
+    - main
